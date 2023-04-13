@@ -1,3 +1,7 @@
+https://user-images.githubusercontent.com/33033422/231781921-cd02f744-0ce6-40a2-9b00-584405665be0.mp4
+
+
+
 ## Liveblocks schema validation demo
 
 This demo lets you quickly change a Liveblocks storage property to a string or number to aid in testing out schema validation.
