@@ -17,10 +17,7 @@ type Presence = {
 // Room, even after all Users leave. Fields under Storage typically are
 // LiveList, LiveMap, LiveObject instances, for which updates are
 // automatically persisted and synced to all connected clients.
-type Storage = {
-  // animals: LiveList<string>,
-  // ...
-};
+type Storage = Record<string, any>;
 
 // UserMeta represents static/readonly metadata on each User, as provided by
 // your own custom auth backend (if used). Useful for data that will not change
@@ -37,7 +34,9 @@ type UserMeta = {
 // room. Must be JSON-serializable.
 // type RoomEvent = {};
 
-export const { RoomProvider, useOthers, useSelf } = createRoomContext<
+export const {
+  suspense: { RoomProvider, useMutation },
+} = createRoomContext<
   Presence,
   Storage,
   UserMeta

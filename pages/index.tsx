@@ -1,73 +1,114 @@
-import React, { useMemo } from "react";
-import { Avatar } from "../components/Avatar";
-import { RoomProvider, useOthers, useSelf } from "../liveblocks.config";
-import { useRouter } from "next/router";
-import styles from "./index.module.css";
+import React, { useState } from "react";
+import { RoomProvider, useMutation } from "../liveblocks.config";
+import { ClientSideSuspense } from "@liveblocks/react";
 
-function Example() {
-  const users = useOthers();
-  const currentUser = useSelf();
-  const hasMoreUsers = users.length > 3;
+function SchemaValidationDemo() {
+  const [propertyKey, setPropertyKey] = useState("");
+  const [propertyValue, setPropertyValue] = useState("");
+  const [propertyType, setPropertyType] = useState<Types>("number");
+
+  const setStorageValue = useMutation(
+    ({ storage }, e) => {
+      e.preventDefault();
+      try {
+        storage.set(propertyKey, convertToType(propertyValue, propertyType));
+      } catch (err) {
+        console.log(err);
+      }
+    },
+    [propertyKey, propertyValue, propertyType]
+  );
 
   return (
-    <main className="flex place-items-center place-content-center w-full h-screen select-none">
-      <div className="flex pl-3">
-        {users.slice(0, 3).map(({ connectionId, info }) => {
-          return (
-            <Avatar
-              key={connectionId}
-              picture={info.picture}
-              name={info.name}
+    <div className="flex place-items-center place-content-center w-full h-screen select-none">
+      <div>
+        <h1 className="pb-3 text-lg">
+          Set property in <code>`Storage`</code>
+        </h1>
+        <form
+          onSubmit={setStorageValue}
+          className="flex gap-3 justify-center items-end"
+        >
+          <div>
+            <label className="block text-sm" htmlFor="key">
+              Key
+            </label>
+            <input
+              id="key"
+              name="key"
+              className="mt-1.5 outline-purple-600 !bg-transparent shadow-sm border rounded-md px-3 py-2 text-base h-10"
+              type="text"
+              value={propertyKey}
+              onChange={(e) => setPropertyKey(e.target.value)}
+              autoComplete="off"
             />
-          );
-        })}
-
-        {hasMoreUsers && <div className={styles.more}>+{users.length - 3}</div>}
-
-        {currentUser && (
-          <div className="relative ml-8 first:ml-0">
-            <Avatar picture={currentUser.info.picture} name="You" />
           </div>
-        )}
+          <div>
+            <label className="block text-sm" htmlFor="type">
+              Type
+            </label>
+            <select
+              id="type"
+              name="type"
+              className="mt-1.5 outline-purple-600 !bg-transparent shadow-sm border rounded-md px-2 py-2 text-base h-10"
+              value={propertyType}
+              onChange={(e) => setPropertyType(e.target.value as Types)}
+              autoComplete="off"
+            >
+              <option value="number">number</option>
+              <option value="string">string</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm" htmlFor="value">
+              Value
+            </label>
+            <input
+              id="value"
+              name="value"
+              className="mt-1.5 outline-purple-600 !bg-transparent shadow-sm border rounded-md px-3 py-2 text-base h-10"
+              type="text"
+              value={propertyValue}
+              onChange={(e) => setPropertyValue(e.target.value)}
+              autoComplete="off"
+            />
+          </div>
+          <button className="mt-1.5 outline-purple-600 bg-[#2f2640] text-white shadow-sm border border-[#2f2640] rounded-md px-3 pt-0.5 text-base h-10 font-semibold hover:bg-[#1a1523] active:bg-[#1a1523]">
+            Submit
+          </button>
+        </form>
       </div>
-    </main>
+    </div>
   );
+}
+
+type Types = "string" | "number";
+
+function convertToType(input: string, newType: Types) {
+  if (newType === "string") {
+    return `${input}`;
+  }
+
+  if (newType === "number") {
+    return Number(input);
+  }
 }
 
 export default function Page() {
-  const roomId = useOverrideRoomId("nextjs-live-avatars");
-
   return (
-    <RoomProvider id={roomId} initialPresence={{}}>
-      <Example />
+    <RoomProvider
+      id={"my-room"}
+      initialPresence={{}}
+      initialStorage={{ count: 7 }}
+    >
+      <ClientSideSuspense fallback={<div>Loading...</div>}>
+        {() => (
+          <>
+            <SchemaValidationDemo />
+            {/*<AvatarStack />*/}
+          </>
+        )}
+      </ClientSideSuspense>
     </RoomProvider>
   );
-}
-
-export async function getStaticProps() {
-  const API_KEY = process.env.LIVEBLOCKS_SECRET_KEY;
-  const API_KEY_WARNING = process.env.CODESANDBOX_SSE
-    ? `Add your secret key from https://liveblocks.io/dashboard/apikeys as the \`LIVEBLOCKS_SECRET_KEY\` secret in CodeSandbox.\n` +
-      `Learn more: https://github.com/liveblocks/liveblocks/tree/main/examples/nextjs-live-avatars#codesandbox.`
-    : `Create an \`.env.local\` file and add your secret key from https://liveblocks.io/dashboard/apikeys as the \`LIVEBLOCKS_SECRET_KEY\` environment variable.\n` +
-      `Learn more: https://github.com/liveblocks/liveblocks/tree/main/examples/nextjs-live-avatars#getting-started.`;
-
-  if (!API_KEY) {
-    console.warn(API_KEY_WARNING);
-  }
-
-  return { props: {} };
-}
-
-/**
- * This function is used when deploying an example on liveblocks.io.
- * You can ignore it completely if you run the example locally.
- */
-function useOverrideRoomId(roomId: string) {
-  const { query } = useRouter();
-  const overrideRoomId = useMemo(() => {
-    return query?.roomId ? `${roomId}-${query.roomId}` : roomId;
-  }, [query, roomId]);
-
-  return overrideRoomId;
 }
